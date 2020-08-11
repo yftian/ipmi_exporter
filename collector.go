@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -236,10 +236,10 @@ func freeipmiConfig(config IPMIConfig) string {
 func freeipmiConfigPipe(config IPMIConfig) (string, error) {
 	content := []byte(freeipmiConfig(config))
 	pipe := pipeName()
-	err := syscall.Mkfifo(pipe, 0600)
-	if err != nil {
-		return "", err
-	}
+	//err := syscall.Mkfifo(pipe, 0600)
+	//if err != nil {
+	//	return "", err
+	//}
 
 	go func(file string, data []byte) {
 		f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModeNamedPipe)
@@ -667,16 +667,16 @@ func (c collector) Collect(ch chan<- prometheus.Metric) {
 		switch collector {
 		case "ipmi":
 			up, _ = collectMonitoring(ch, target)
-		case "sm-lan-mode":
-			up, _ = collectSmLanMode(ch, target)
+		//case "sm-lan-mode":
+		//	up, _ = collectSmLanMode(ch, target)
 		case "dcmi":
 			up, _ = collectDCMI(ch, target)
 		case "bmc":
 			up, _ = collectBmcInfo(ch, target)
 		case "chassis":
 			up, _ = collectChassisState(ch, target)
-		case "sel":
-			up, _ = collectSELInfo(ch, target)
+		//case "sel":
+		//	up, _ = collectSELInfo(ch, target)
 		}
 		markCollectorUp(ch, collector, up)
 	}
