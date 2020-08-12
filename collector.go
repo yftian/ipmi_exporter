@@ -207,7 +207,19 @@ func ipmiDCMIOutput(target ipmiTarget) ([]byte, error) {
 		"-u", "User",
 		"-p", "Pwd"})
 }
-
+func ipmiOutput(name string, args []string) ([]byte, error) {
+	cmd := exec.Command(name, args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		log.Error(fmt.Sprint(err) + ":" + stderr.String())
+		return nil, errors.New(stderr.String())
+	}
+	return out.Bytes(),err
+}
 func ipmiChassisOutput(target ipmiTarget) ([]byte, error) {
 	return freeipmiOutput("ipmi-chassis", []string{
 		"-D", "Driver",
@@ -357,7 +369,12 @@ func readFile(filename string) ([]byte, error) {
 }
 
 func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiMonitoringOutput(target)
+	//output, err := ipmiOutput("ipmimonitoring",[]string{
+	//	"-D", "Driver",
+	//	"-h", "Host",
+	//	"-u", "User",
+	//	"-p", "Pwd",
+	//})
 	output, err := readFile("./file/sugonipmi.txt")
 	if err != nil {
 		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", targetName(target.host), err)
@@ -406,7 +423,12 @@ func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, err
 }
 
 func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiDCMIOutput(target)
+	//output, err := ipmiOutput("ipmi-dcmi",[]string{
+	//	"-D", "Driver",
+	//	"-h", "Host",
+	//	"-u", "User",
+	//	"-p", "Pwd",
+	//})
 	output, err := readFile("./file/sugondcmi.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", targetName(target.host), err)
@@ -427,7 +449,12 @@ func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
 }
 
 func collectChassisState(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiChassisOutput(target)
+	//output, err := ipmiOutput("ipmi-chassis",[]string{
+	//	"-D", "Driver",
+	//	"-h", "Host",
+	//	"-u", "User",
+	//	"-p", "Pwd",
+	//})
 	output, err := readFile("./file/sugonchass.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", targetName(target.host), err)
