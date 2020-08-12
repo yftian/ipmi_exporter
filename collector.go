@@ -358,7 +358,7 @@ func readFile(filename string) ([]byte, error) {
 
 func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
 	//output, err := ipmiMonitoringOutput(target)
-	output, err := readFile("./file/hpipmi.txt")
+	output, err := readFile("./file/sugonipmi.txt")
 	if err != nil {
 		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", targetName(target.host), err)
 		return 0, err
@@ -407,7 +407,7 @@ func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, err
 
 func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
 	//output, err := ipmiDCMIOutput(target)
-	output, err := readFile("./file/hpdcmi.txt")
+	output, err := readFile("./file/sugondcmi.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", targetName(target.host), err)
 		return 0, err

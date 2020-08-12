@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
-	"github.com/prometheus/common/version"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -61,10 +60,10 @@ func updateConfiguration(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.HelpFlag.Short('h')
-	kingpin.Version(version.Print("ipmi_exporter"))
-	kingpin.Parse()
+	//log.AddFlags(kingpin.CommandLine)
+	//kingpin.HelpFlag.Short('h')
+	//kingpin.Version(version.Print("ipmi_exporter"))
+	//kingpin.Parse()
 	log.Infoln("Starting ipmi_exporter")
 
 	// Bail early if the config is bad.
@@ -130,7 +129,7 @@ func main() {
 	})
 
 	log.Infof("Listening on %s", *listenAddress)
-	err := http.ListenAndServe(*listenAddress, nil)
+	err := http.ListenAndServe(":9290", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
