@@ -5,6 +5,8 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
 	"io/ioutil"
 	"math"
 	"os/exec"
@@ -12,9 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 const (
@@ -29,11 +28,7 @@ var (
 	ipmiChassisCollingRegex   = regexp.MustCompile(`^Cooling/fan fault\s*:\s(?P<value>.*)`)
 )
 
-type collector struct {
-	targets []string
-	module  string
-	config  *SafeConfig
-}
+type collector struct{}
 
 type sensorData struct {
 	ID    int64
@@ -43,11 +38,6 @@ type sensorData struct {
 	Value float64
 	Unit  string
 	Event string
-}
-
-type ipmiTarget struct {
-	host   string
-	config IPMIConfig
 }
 
 var (
@@ -178,35 +168,6 @@ var (
 	)
 )
 
-func freeipmiOutput(name string, args []string) ([]byte, error) {
-	out := exec.Command(name, args...)
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	out.Stdout = &stdout
-	out.Stderr = &stderr
-	err := out.Run()
-	if err != nil {
-		log.Error(fmt.Sprint(err) + ":" + stderr.String())
-		return nil, errors.New(stderr.String())
-	}
-	return stdout.Bytes(), err
-}
-
-func ipmiMonitoringOutput(target ipmiTarget) ([]byte, error) {
-	return freeipmiOutput("ipmimonitoring", []string{
-		"-D", "Driver",
-		"-h", "Host",
-		"-u", "User",
-		"-p", "Pwd"})
-}
-
-func ipmiDCMIOutput(target ipmiTarget) ([]byte, error) {
-	return freeipmiOutput("ipmi-dcmi", []string{
-		"-D", "Driver",
-		"-h", "Host",
-		"-u", "User",
-		"-p", "Pwd"})
-}
 func ipmiOutput(name string, args []string) ([]byte, error) {
 	cmd := exec.Command(name, args...)
 	var out bytes.Buffer
@@ -218,14 +179,7 @@ func ipmiOutput(name string, args []string) ([]byte, error) {
 		log.Error(fmt.Sprint(err) + ":" + stderr.String())
 		return nil, errors.New(stderr.String())
 	}
-	return out.Bytes(),err
-}
-func ipmiChassisOutput(target ipmiTarget) ([]byte, error) {
-	return freeipmiOutput("ipmi-chassis", []string{
-		"-D", "Driver",
-		"-h", "Host",
-		"-u", "User",
-		"-p", "Pwd"})
+	return out.Bytes(), err
 }
 
 func splitMonitoringOutput(impiOutput []byte) ([]sensorData, error) {
@@ -327,7 +281,7 @@ func collectTypedSensor(ch chan<- prometheus.Metric, desc, stateDesc *prometheus
 		data.Value,
 		strconv.FormatInt(data.ID, 10),
 		data.Name,
-		target.host,
+		target.Host,
 	)
 	ch <- prometheus.MustNewConstMetric(
 		stateDesc,
@@ -335,7 +289,7 @@ func collectTypedSensor(ch chan<- prometheus.Metric, desc, stateDesc *prometheus
 		state,
 		strconv.FormatInt(data.ID, 10),
 		data.Name,
-		target.host,
+		target.Host,
 	)
 }
 
@@ -347,7 +301,7 @@ func collectGenericSensor(ch chan<- prometheus.Metric, state float64, data senso
 		strconv.FormatInt(data.ID, 10),
 		data.Name,
 		data.Type,
-		target.host,
+		target.Host,
 	)
 	ch <- prometheus.MustNewConstMetric(
 		sensorStateDesc,
@@ -356,7 +310,7 @@ func collectGenericSensor(ch chan<- prometheus.Metric, state float64, data senso
 		strconv.FormatInt(data.ID, 10),
 		data.Name,
 		data.Type,
-		target.host,
+		target.Host,
 	)
 }
 
@@ -369,20 +323,20 @@ func readFile(filename string) ([]byte, error) {
 }
 
 func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmimonitoring",[]string{
-	//	"-D", "Driver",
-	//	"-h", "Host",
-	//	"-u", "User",
-	//	"-p", "Pwd",
-	//})
-	output, err := readFile("./file/sugonipmi.txt")
+	output, err := ipmiOutput("ipmimonitoring", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpipmi.txt")
 	if err != nil {
-		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	results, err := splitMonitoringOutput(output)
 	if err != nil {
-		log.Errorf("Failed to parse ipmimonitoring data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to parse ipmimonitoring data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	for _, data := range results {
@@ -423,77 +377,77 @@ func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, err
 }
 
 func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmi-dcmi",[]string{
-	//	"-D", "Driver",
-	//	"-h", "Host",
-	//	"-u", "User",
-	//	"-p", "Pwd",
-	//})
-	output, err := readFile("./file/sugondcmi.txt")
+	output, err := ipmiOutput("ipmi-dcmi", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpdcmi.txt")
 	if err != nil {
-		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", targetName(target.host), err)
+		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	currentPowerConsumption, err := getCurrentPowerConsumption(output)
 	if err != nil {
-		log.Errorf("Failed to parse ipmi-dcmi data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to parse ipmi-dcmi data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	ch <- prometheus.MustNewConstMetric(
 		powerConsumption,
 		prometheus.GaugeValue,
 		currentPowerConsumption,
-		target.host,
+		target.Host,
 	)
 	return 1, nil
 }
 
 func collectChassisState(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmi-chassis",[]string{
-	//	"-D", "Driver",
-	//	"-h", "Host",
-	//	"-u", "User",
-	//	"-p", "Pwd",
-	//})
-	output, err := readFile("./file/sugonchass.txt")
+	output, err := ipmiOutput("ipmi-dcmi", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/sugonchass.txt")
 	if err != nil {
-		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", targetName(target.host), err)
+		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	currentChassisPowerState, err := getChassis(output, ipmiChassisPowerRegex)
 	if err != nil {
-		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	ch <- prometheus.MustNewConstMetric(
 		chassisPowerState,
 		prometheus.GaugeValue,
 		currentChassisPowerState,
-		target.host,
+		target.Host,
 	)
 
 	currentChassisDriveFault, err := getChassis(output, ipmiChassisDriveRegex)
 	if err != nil {
-		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	ch <- prometheus.MustNewConstMetric(
 		chassisDriveFault,
 		prometheus.GaugeValue,
 		currentChassisDriveFault,
-		target.host,
+		target.Host,
 	)
 
 	currentChassisCoolingFault, err := getChassis(output, ipmiChassisCollingRegex)
 	if err != nil {
-		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", targetName(target.host), err)
+		log.Errorf("Failed to parse ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err
 	}
 	ch <- prometheus.MustNewConstMetric(
 		chassisCoolingFault,
 		prometheus.GaugeValue,
 		currentChassisCoolingFault,
-		target.host,
+		target.Host,
 	)
 
 	return 1, nil
@@ -505,54 +459,35 @@ func markCollectorUp(ch chan<- prometheus.Metric, name string, up int, target ip
 		prometheus.GaugeValue,
 		float64(up),
 		name,
-		target.host,
+		target.Host,
 	)
 }
 
 // Collect implements Prometheus.Collector.
 func (c collector) Collect(ch chan<- prometheus.Metric) {
-	for _, target := range c.targets {
+	for _, target := range config.Targets {
 		start := time.Now()
 		duration := time.Since(start).Seconds()
-		log.Debugf("Scrape of target %s took %f seconds.", targetName(target), duration)
+		log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
 		ch <- prometheus.MustNewConstMetric(
 			durationDesc,
 			prometheus.GaugeValue,
 			duration,
-			target,
+			target.Host,
 		)
 
-		config := c.config.ConfigForTarget(target, c.module)
-		ipmiTarget := ipmiTarget{
-			host:   target,
-			config: config,
-		}
-
-		for _, collector := range config.Collectors {
+		for _, collector := range config.Global.Collector {
 			var up int
 			log.Debugf("Running collector: %s", collector)
 			switch collector {
-			case "ipmi":
-				up, _ = collectMonitoring(ch, ipmiTarget)
-			case "dcmi":
-				up, _ = collectDCMI(ch, ipmiTarget)
-			case "chassis":
-				up, _ = collectChassisState(ch, ipmiTarget)
+			case "ipmimonitoring":
+				up, _ = collectMonitoring(ch, target)
+			case "ipmi-dcmi":
+				up, _ = collectDCMI(ch, target)
+			case "ipmi-chassis":
+				up, _ = collectChassisState(ch, target)
 			}
-			markCollectorUp(ch, collector, up, ipmiTarget)
+			markCollectorUp(ch, collector, up, target)
 		}
 	}
-
-}
-
-
-func targetName(target string) string {
-	if targetIsLocal(target) {
-		return "[local]"
-	}
-	return target
-}
-
-func targetIsLocal(target string) bool {
-	return target == targetLocal
 }
