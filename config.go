@@ -29,12 +29,9 @@ type SafeConfig struct {
 type IPMIConfig struct {
 	User             string   `yaml:"user"`
 	Password         string   `yaml:"pass"`
-	Privilege        string   `yaml:"privilege"`
 	Driver           string   `yaml:"driver"`
-	Timeout          uint32   `yaml:"timeout"`
 	Collectors       []string `yaml:"collectors"`
-	ExcludeSensorIDs []int64  `yaml:"exclude_sensor_ids"`
-	WorkaroundFlags  []string `yaml:"workaround_flags"`
+
 
 	// Catches all undefined fields and must be empty after parsing.
 	XXX map[string]interface{} `yaml:",inline"`

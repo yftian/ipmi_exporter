@@ -1,0 +1,13 @@
+System Power : on
+Power overload : false
+Interlock : inactive
+Power fault : false
+Power control fault : false
+Power restore policy : Always off
+
+Last Power Event : ac failed
+Chassis intrusion : inactive
+Front panel lockout : inactive
+Drive Fault : false
+Cooling/fan fault : false
+Chassis Identify state : Indefinite on

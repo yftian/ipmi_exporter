@@ -1,0 +1,7 @@
+Current Power : 0 Watts
+Minimum Power over sampling duration : 0 watts
+Maximum Power over sampling duration : 0 watts
+Average Power over sampling duration : 0 watts
+Time Stamp : 01/01/2010 - 00:00:49
+Statistics reporting time period : 0 milliseconds
+Power Measurement : Not Available

@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	configFile = kingpin.Flag(
-		"config.file",
-		"Path to configuration file.",
-	).String()
+	//configFile = kingpin.Flag(
+	//	"config.file",
+	//	"Path to configuration file.",
+	//).String()
+	configFile = "ipmi_remote.yml"
 	executablesPath = kingpin.Flag(
 		"freeipmi.path",
 		"Path to FreeIPMI executables (default: rely on $PATH).",
@@ -35,32 +36,16 @@ var (
 )
 
 func remoteIPMIHandler(w http.ResponseWriter, r *http.Request) {
-	target := r.URL.Query().Get("target")
-	if target == "" {
-		http.Error(w, "'target' parameter must be specified", 400)
-		return
-	}
-
-	// Remote scrape will not work without some kind of config, so be pedantic about it
-	module := r.URL.Query().Get("module")
-	if module == "" {
-		module = "default"
-	}
-	if !sc.HasModule(module) {
-		http.Error(w, fmt.Sprintf("Unknown module %q", module), http.StatusBadRequest)
-		return
-	}
-
-	log.Debugf("Scraping target '%s' with module '%s'", target, module)
-
+	ips := []string{"1.2.3.4","2.3.4.5","3.4.5.6"}
 	registry := prometheus.NewRegistry()
-	remoteCollector := collector{target: target, module: module, config: sc}
+	remoteCollector := collector{targets: ips, module: "ipmi", config: sc}
 	registry.MustRegister(remoteCollector)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 }
 
 func updateConfiguration(w http.ResponseWriter, r *http.Request) {
+	log.Info("刷新配置。。。")
 	switch r.Method {
 	case "POST":
 		rc := make(chan error)
@@ -83,7 +68,7 @@ func main() {
 	log.Infoln("Starting ipmi_exporter")
 
 	// Bail early if the config is bad.
-	if err := sc.ReloadConfig(*configFile); err != nil {
+	if err := sc.ReloadConfig(configFile); err != nil {
 		log.Fatalf("Error parsing config file: %s", err)
 	}
 
@@ -94,11 +79,11 @@ func main() {
 		for {
 			select {
 			case <-hup:
-				if err := sc.ReloadConfig(*configFile); err != nil {
+				if err := sc.ReloadConfig(configFile); err != nil {
 					log.Errorf("Error reloading config: %s", err)
 				}
 			case rc := <-reloadCh:
-				if err := sc.ReloadConfig(*configFile); err != nil {
+				if err := sc.ReloadConfig(configFile); err != nil {
 					log.Errorf("Error reloading config: %s", err)
 					rc <- err
 				} else {
@@ -108,8 +93,8 @@ func main() {
 		}
 	}()
 
-	localCollector := collector{target: targetLocal, module: "default", config: sc}
-	prometheus.MustRegister(&localCollector)
+	//localCollector := collector{target: targetLocal, module: "default", config: sc}
+	//prometheus.MustRegister(&localCollector)
 
 	http.Handle("/metrics", promhttp.Handler())       // Regular metrics endpoint for local IPMI metrics.
 	http.HandleFunc("/ipmi", remoteIPMIHandler)       // Endpoint to do IPMI scrapes.
