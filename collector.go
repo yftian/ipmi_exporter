@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"io/ioutil"
 	"math"
 	"os/exec"
 	"regexp"
@@ -18,7 +17,6 @@ import (
 
 const (
 	namespace   = "ipmi"
-	targetLocal = ""
 )
 
 var (
@@ -314,13 +312,13 @@ func collectGenericSensor(ch chan<- prometheus.Metric, state float64, data senso
 	)
 }
 
-func readFile(filename string) ([]byte, error) {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Error("File reading error", err.Error())
-	}
-	return data, err
-}
+//func readFile(filename string) ([]byte, error) {
+//	data, err := ioutil.ReadFile(filename)
+//	if err != nil {
+//		log.Error("File reading error", err.Error())
+//	}
+//	return data, err
+//}
 
 func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
 	output, err := ipmiOutput("ipmimonitoring", []string{
