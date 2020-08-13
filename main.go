@@ -6,9 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
@@ -38,9 +35,6 @@ func remoteIPMIHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	log.Info("Starting ipmi_exporter")
-
-	hup := make(chan os.Signal)
-	signal.Notify(hup, syscall.SIGHUP)
 
 	http.HandleFunc("/metrics", remoteIPMIHandler)       // Endpoint to do IPMI scrapes.
 

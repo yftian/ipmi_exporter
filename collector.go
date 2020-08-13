@@ -7,13 +7,13 @@ import (
 	"fmt"
 	log "github.com/cihub/seelog"
 	"github.com/prometheus/client_golang/prometheus"
-	//"github.com/prometheus/common/log"
 	"io/ioutil"
 	"math"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -323,13 +323,13 @@ func readFile(filename string) ([]byte, error) {
 }
 
 func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmimonitoring", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/hpipmi.txt")
+	output, err := ipmiOutput("ipmimonitoring", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpipmi.txt")
 	if err != nil {
 		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", target.Host, err)
 		return 0, err
@@ -377,13 +377,13 @@ func collectMonitoring(ch chan<- prometheus.Metric, target ipmiTarget) (int, err
 }
 
 func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmi-dcmi", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/hpdcmi.txt")
+	output, err := ipmiOutput("ipmi-dcmi", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpdcmi.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", target.Host, err)
 		return 0, err
@@ -403,13 +403,13 @@ func collectDCMI(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
 }
 
 func collectChassisState(ch chan<- prometheus.Metric, target ipmiTarget) (int, error) {
-	//output, err := ipmiOutput("ipmi-dcmi", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/sugonchass.txt")
+	output, err := ipmiOutput("ipmi-dcmi", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/sugonchass.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err
@@ -464,7 +464,6 @@ func markCollectorUp(ch chan<- prometheus.Metric, name string, up int, target ip
 }
 
 func IpmiCollect(ch chan<- prometheus.Metric, target ipmiTarget)  {
-	fmt.Println(target)
 	start := time.Now()
 	duration := time.Since(start).Seconds()
 	log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
@@ -492,7 +491,13 @@ func IpmiCollect(ch chan<- prometheus.Metric, target ipmiTarget)  {
 
 // Collect implements Prometheus.Collector.
 func (c collector) Collect(ch chan<- prometheus.Metric) {
-	for _, target := range config.Targets {
-		IpmiCollect(ch, target)
+	wg := sync.WaitGroup{}
+	wg.Add(len(config.Targets))
+	for i := 0; i < len(config.Targets); i++ {
+		go func(i int) {
+			IpmiCollect(ch, config.Targets[i])
+			wg.Done()
+		}(i)
 	}
+	wg.Wait()
 }
