@@ -1,6 +1,7 @@
 global:
   address: :9290
   drive: LAN_2_0
+  interval: 10
   collector:
     - ipmimonitoring
     - ipmi-chassis
