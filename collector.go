@@ -413,7 +413,7 @@ func collectDCMI(target ipmiTarget) (int, error, prometheus.Metric){
 
 func collectChassisState(target ipmiTarget) (int, error, []prometheus.Metric) {
 	var chassMetrics [] prometheus.Metric
-	output, err := ipmiOutput("ipmi-dcmi", []string{
+	output, err := ipmiOutput("ipmi-chassis", []string{
 		"-D", config.Global.Drive,
 		"-h", target.Host,
 		"-u", target.User,
