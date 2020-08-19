@@ -20,7 +20,7 @@ type Service struct {
 
 var (
 	config = Config{}
-	lock sync.Mutex
+	lock sync.RWMutex
 	metrics [] prometheus.Metric
 )
 
@@ -39,12 +39,10 @@ func init() {
 
 func remoteIPMIHandler(w http.ResponseWriter, r *http.Request) {
 	registry := prometheus.NewRegistry()
-	lock.Lock()
 	remoteCollector := collector{}
 	registry.MustRegister(remoteCollector)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
-	lock.Unlock()
 }
 
 func flush()  {

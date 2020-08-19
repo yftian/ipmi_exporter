@@ -512,7 +512,9 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 // Collect implements Prometheus.Collector.
 func (c collector) Collect(ch chan<- prometheus.Metric) {
 	log.Info("get metrics data:",len(metrics))
+	lock.RLock()
 	for _, metric := range metrics {
 		ch <- metric
 	}
+	lock.RUnlock()
 }
