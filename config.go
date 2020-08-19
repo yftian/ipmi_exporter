@@ -12,6 +12,7 @@ type Config struct {
 		Drive         string
 		Interval      string
 		Collector   []string
+		TimeOut       int
 	}
 	Targets []ipmiTarget
 }

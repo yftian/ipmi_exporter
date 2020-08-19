@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	log "github.com/cihub/seelog"
 	"github.com/jinzhu/configor"
 	"github.com/prometheus/client_golang/prometheus"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 )
 
 type Service struct {
@@ -45,18 +47,26 @@ func remoteIPMIHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func flush()  {
-	log.Info("flush data",len(metrics))
 	var targetMetrics []prometheus.Metric
 	wg := sync.WaitGroup{}
 	wg.Add(len(config.Targets))
 	for i := 0; i < len(config.Targets); i++ {
 		go func(i int) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second * time.Duration(config.Global.TimeOut))
+			defer cancel()
 			targetMetrics = append(targetMetrics,IpmiCollect(config.Targets[i])...)
+			select {
+			case <-ctx.Done():
+				log.Error("收到超时信号,采集退出", config.Targets[i].Host)
+			default:
+				log.Info(config.Targets[i].Host,":指标采集完成",len(targetMetrics))
+			}
 			wg.Done()
 		}(i)
 	}
-	//统一写操作
 	wg.Wait()
+
+	//统一写操作
 	gRWLock.Lock()
 	metrics = []prometheus.Metric{}
 	metrics = append(metrics,targetMetrics...)
