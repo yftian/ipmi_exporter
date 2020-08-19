@@ -20,12 +20,11 @@ type Service struct {
 
 var (
 	config = Config{}
-	gRWLock *sync.RWMutex
+	lock sync.Mutex
 	metrics [] prometheus.Metric
 )
 
 func init() {
-	gRWLock = new(sync.RWMutex)
 	err := configor.Load(&config, "./config/config.yml")
 	if err != nil{
 		log.Error("Error parsing config file: %s", err)
@@ -67,11 +66,11 @@ func flush()  {
 	wg.Wait()
 
 	//统一写操作
-	//gRWLock.Lock()
+	lock.Lock()
 	metrics = []prometheus.Metric{}
 	metrics = append(metrics,targetMetrics...)
 	log.Info("metrics:",len(metrics))
-	//gRWLock.Unlock()
+	lock.Unlock()
 }
 
 func (service *Service) Manage ()  {
