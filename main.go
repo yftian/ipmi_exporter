@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	config = Config{}
-	lock sync.RWMutex
-	metrics [] prometheus.Metric
+	config  = Config{}
+	lock    sync.RWMutex
+	metrics *[]prometheus.Metric
 )
 
 func init() {
@@ -61,8 +61,8 @@ func flush()  {
 
 	//统一写操作
 	lock.Lock()
-	metrics = targetMetrics
-	log.Info("metrics:",len(metrics))
+	metrics = &targetMetrics
+	log.Info("metrics:",len(*metrics))
 	defer lock.Unlock()
 }
 
