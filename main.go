@@ -67,8 +67,7 @@ func flush()  {
 
 	//统一写操作
 	lock.Lock()
-	metrics = []prometheus.Metric{}
-	metrics = append(metrics,targetMetrics...)
+	metrics = targetMetrics
 	log.Info("metrics:",len(metrics))
 	lock.Unlock()
 }
