@@ -327,13 +327,13 @@ func readFile(filename string) ([]byte, error) {
 
 func collectMonitoring(target ipmiTarget) (int, error, []prometheus.Metric) {
 	var monitorMetrics [] prometheus.Metric
-	//output, err := ipmiOutput("ipmimonitoring", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/hpipmi.txt")
+	output, err := ipmiOutput("ipmimonitoring", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpipmi.txt")
 	if err != nil {
 		log.Errorf("Failed to collect ipmimonitoring data from %s: %s", target.Host, err)
 		return 0, err, nil
@@ -387,13 +387,13 @@ func collectMonitoring(target ipmiTarget) (int, error, []prometheus.Metric) {
 }
 
 func collectDCMI(target ipmiTarget) (int, error, prometheus.Metric){
-	//output, err := ipmiOutput("ipmi-dcmi", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/hpdcmi.txt")
+	output, err := ipmiOutput("ipmi-dcmi", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/hpdcmi.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", target.Host, err)
 		return 0, err, nil
@@ -413,13 +413,13 @@ func collectDCMI(target ipmiTarget) (int, error, prometheus.Metric){
 
 func collectChassisState(target ipmiTarget) (int, error, []prometheus.Metric) {
 	var chassMetrics [] prometheus.Metric
-	//output, err := ipmiOutput("ipmi-chassis", []string{
-	//	"-D", config.Global.Drive,
-	//	"-h", target.Host,
-	//	"-u", target.User,
-	//	"-p", target.Pwd,
-	//})
-	output, err := readFile("./file/sugonchass.txt")
+	output, err := ipmiOutput("ipmi-chassis", []string{
+		"-D", config.Global.Drive,
+		"-h", target.Host,
+		"-u", target.User,
+		"-p", target.Pwd,
+	})
+	//output, err := readFile("./file/sugonchass.txt")
 	if err != nil {
 		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err,nil
