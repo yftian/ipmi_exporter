@@ -7,16 +7,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/robfig/cron/v3"
-	"github.com/takama/daemon"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 )
-
-type Service struct {
-	daemon.Daemon
-}
 
 var (
 	config = Config{}
@@ -69,10 +63,10 @@ func flush()  {
 	lock.Lock()
 	metrics = targetMetrics
 	log.Info("metrics:",len(metrics))
-	lock.Unlock()
+	defer lock.Unlock()
 }
 
-func (service *Service) Manage ()  {
+func Manage ()  {
 	//Create a cron manager
 	log.Info("Create a cron manager")
 	c := cron.New(cron.WithSeconds())
@@ -84,18 +78,13 @@ func (service *Service) Manage ()  {
 
 func main() {
 	log.Info("Starting ipmi_exporter")
-	srv,err := daemon.New("", "", daemon.SystemDaemon)
-	if err != nil {
-		log.Error("Error", err)
-		os.Exit(1)
-	}
-	service := Service{srv}
-	go service.Manage()
+
+	go Manage()
 
 	http.HandleFunc("/metrics", remoteIPMIHandler)       // Endpoint to do IPMI scrapes.
 	log.Info("Listening on %s", config.Global.Address)
 	log.Info(config.Global.Address)
-	err = http.ListenAndServe(config.Global.Address, nil)
+	err := http.ListenAndServe(config.Global.Address, nil)
 	if err != nil {
 		log.Error(err)
 	}
