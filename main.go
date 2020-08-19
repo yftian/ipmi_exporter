@@ -67,11 +67,11 @@ func flush()  {
 	wg.Wait()
 
 	//统一写操作
-	gRWLock.Lock()
+	//gRWLock.Lock()
 	metrics = []prometheus.Metric{}
 	metrics = append(metrics,targetMetrics...)
 	log.Info("metrics:",len(metrics))
-	gRWLock.Unlock()
+	//gRWLock.Unlock()
 }
 
 func (service *Service) Manage ()  {
