@@ -15,7 +15,7 @@ import (
 var (
 	config  = Config{}
 	lock    sync.RWMutex
-	metrics *[]prometheus.Metric
+	metrics []prometheus.Metric
 )
 
 func init() {
@@ -61,8 +61,8 @@ func flush()  {
 
 	//统一写操作
 	lock.Lock()
-	metrics = &targetMetrics
-	log.Info("metrics:",len(*metrics))
+	metrics = targetMetrics
+	log.Info("metrics:",len(metrics))
 	defer lock.Unlock()
 }
 
@@ -70,8 +70,8 @@ func Manage ()  {
 	//Create a cron manager
 	log.Info("Create a cron manager")
 	c := cron.New(cron.WithSeconds())
-	//Run func every min
 	c.AddFunc("*/"+ config.Global.Interval +" * * * * *",flush)
+	//Run func every min
 	c.Start()
 	select {}
 }
