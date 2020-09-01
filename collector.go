@@ -491,7 +491,7 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 		var collectMetcics []prometheus.Metric
 		var dcmiMetric prometheus.Metric
 		var chassMetrics []prometheus.Metric
-		log.Infof("Running collector: %s", collector)
+		//log.Infof("Running collector: %s", collector)
 		switch collector {
 		case "ipmimonitoring":
 			up, _,collectMetcics = collectMonitoring(target)
@@ -505,13 +505,12 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 		}
 		ipmiMetrics = append(ipmiMetrics, markCollectorUp(collector, up, target))
 	}
-	log.Info("ipmiMetrics:",len(ipmiMetrics))
+	//log.Info("ipmiMetrics:",len(ipmiMetrics))
 	return ipmiMetrics
 }
 
 // Collect implements Prometheus.Collector.
 func (c collector) Collect(ch chan<- prometheus.Metric) {
-	log.Info("get metrics data:",len(metrics))
 	lock.RLock()
 	for _, metric := range metrics {
 		if metric != nil{

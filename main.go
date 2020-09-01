@@ -52,7 +52,7 @@ func flush()  {
 			case <-ctx.Done():
 				log.Error("收到超时信号,采集退出", config.Targets[i].Host)
 			default:
-				log.Info(config.Targets[i].Host,":指标采集完成",len(targetMetrics))
+				//log.Info(config.Targets[i].Host,":指标采集完成",len(targetMetrics))
 			}
 			wg.Done()
 		}(i)
@@ -62,7 +62,6 @@ func flush()  {
 	//统一写操作
 	lock.Lock()
 	metrics = targetMetrics
-	log.Infof("metrics:",len(metrics))
 	defer lock.Unlock()
 }
 
