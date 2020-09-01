@@ -21,7 +21,7 @@ var (
 func init() {
 	err := configor.Load(&config, "./config/config.yml")
 	if err != nil{
-		log.Error("Error parsing config file: %s", err)
+		log.Errorf("Error parsing config file: %s", err)
 	}
 	defer log.Flush()
 	logger,err :=log.LoggerFromConfigAsFile("./config/logconf.xml")
@@ -62,7 +62,7 @@ func flush()  {
 	//统一写操作
 	lock.Lock()
 	metrics = targetMetrics
-	log.Info("metrics:",len(metrics))
+	log.Infof("metrics:",len(metrics))
 	defer lock.Unlock()
 }
 
@@ -82,7 +82,7 @@ func main() {
 	go Manage()
 
 	http.HandleFunc("/metrics", remoteIPMIHandler)       // Endpoint to do IPMI scrapes.
-	log.Info("Listening on %s", config.Global.Address)
+	log.Infof("Listening on %s", config.Global.Address)
 	log.Info(config.Global.Address)
 	err := http.ListenAndServe(config.Global.Address, nil)
 	if err != nil {

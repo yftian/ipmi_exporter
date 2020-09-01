@@ -320,7 +320,7 @@ func collectGenericSensor(state float64, data sensorData, target ipmiTarget) []p
 func readFile(filename string) ([]byte, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log.Error("File reading error", err.Error())
+		log.Errorf("File reading error %s", err)
 	}
 	return data, err
 }
@@ -360,7 +360,7 @@ func collectMonitoring(target ipmiTarget) (int, error, []prometheus.Metric) {
 			state = math.NaN()
 		}
 
-		log.Debugf("Got values: %v\n", data)
+		//log.Debugf("Got values: %v\n", data)
 
 		switch data.Unit {
 		case "RPM":
@@ -395,7 +395,7 @@ func collectDCMI(target ipmiTarget) (int, error, prometheus.Metric){
 	})
 	//output, err := readFile("./file/hpdcmi.txt")
 	if err != nil {
-		log.Debugf("Failed to collect ipmi-dcmi data from %s: %s", target.Host, err)
+		log.Errorf("Failed to collect ipmi-dcmi data from %s: %s", target.Host, err)
 		return 0, err, nil
 	}
 	currentPowerConsumption, err := getCurrentPowerConsumption(output)
@@ -421,7 +421,7 @@ func collectChassisState(target ipmiTarget) (int, error, []prometheus.Metric) {
 	})
 	//output, err := readFile("./file/sugonchass.txt")
 	if err != nil {
-		log.Debugf("Failed to collect ipmi-chassis data from %s: %s", target.Host, err)
+		log.Errorf("Failed to collect ipmi-chassis data from %s: %s", target.Host, err)
 		return 0, err,nil
 	}
 	currentChassisPowerState, err := getChassis(output, ipmiChassisPowerRegex)
@@ -477,7 +477,7 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 	var ipmiMetrics [] prometheus.Metric
 	start := time.Now()
 	duration := time.Since(start).Seconds()
-	log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
+	//log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
 	durationMetrics := prometheus.MustNewConstMetric(
 		durationDesc,
 		prometheus.GaugeValue,
@@ -491,7 +491,7 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 		var collectMetcics []prometheus.Metric
 		var dcmiMetric prometheus.Metric
 		var chassMetrics []prometheus.Metric
-		log.Debugf("Running collector: %s", collector)
+		log.Infof("Running collector: %s", collector)
 		switch collector {
 		case "ipmimonitoring":
 			up, _,collectMetcics = collectMonitoring(target)
