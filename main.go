@@ -24,12 +24,12 @@ var (
 )
 
 func inst() {
-	err := configor.Load(&config, *configDir + "/config/config.yml")
+	err := configor.Load(&config, *configDir + "/config.yml")
 	if err != nil {
 		log.Errorf("Error parsing config file: %s", err)
 	}
 	defer log.Flush()
-	logger, err := log.LoggerFromConfigAsFile(*configDir + "/config/logconf.xml")
+	logger, err := log.LoggerFromConfigAsFile(*configDir + "/logconf.xml")
 	if err != nil {
 		log.Errorf("parse logconfig.xml err: %v", err)
 	}
