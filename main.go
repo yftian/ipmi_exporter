@@ -23,7 +23,7 @@ var (
 	).String()
 )
 
-func init() {
+func inst() {
 	err := configor.Load(&config, *configDir + "/config/config.yml")
 	if err != nil {
 		log.Errorf("Error parsing config file: %s", err)
@@ -31,7 +31,7 @@ func init() {
 	defer log.Flush()
 	logger, err := log.LoggerFromConfigAsFile(*configDir + "/config/logconf.xml")
 	if err != nil {
-		log.Errorf("parse config.xml err: %v", err)
+		log.Errorf("parse logconfig.xml err: %v", err)
 	}
 	log.ReplaceLogger(logger)
 }
@@ -84,6 +84,7 @@ func main() {
 	log.Info("Starting ipmi_exporter")
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	inst()
 	go Manage()
 
 	http.HandleFunc("/metrics", remoteIPMIHandler) // Endpoint to do IPMI scrapes.
