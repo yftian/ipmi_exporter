@@ -7,26 +7,31 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/robfig/cron/v3"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"net/http"
 	"sync"
 	"time"
 )
 
 var (
-	config  = Config{}
-	lock    sync.RWMutex
-	metrics []prometheus.Metric
+	config    = Config{}
+	lock      sync.RWMutex
+	metrics   []prometheus.Metric
+	configDir = kingpin.Flag(
+		"config.dir",
+		"dir of configuration file.",
+	).String()
 )
 
 func init() {
-	err := configor.Load(&config, "./config/config.yml")
-	if err != nil{
+	err := configor.Load(&config, *configDir + "/config/config.yml")
+	if err != nil {
 		log.Errorf("Error parsing config file: %s", err)
 	}
 	defer log.Flush()
-	logger,err :=log.LoggerFromConfigAsFile("./config/logconf.xml")
-	if err != nil{
-		log.Errorf("parse config.xml err: %v",err)
+	logger, err := log.LoggerFromConfigAsFile(*configDir + "/config/logconf.xml")
+	if err != nil {
+		log.Errorf("parse config.xml err: %v", err)
 	}
 	log.ReplaceLogger(logger)
 }
@@ -39,15 +44,15 @@ func remoteIPMIHandler(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTP(w, r)
 }
 
-func flush()  {
+func flush() {
 	var targetMetrics []prometheus.Metric
 	wg := sync.WaitGroup{}
 	wg.Add(len(config.Targets))
 	for i := 0; i < len(config.Targets); i++ {
 		go func(i int) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * time.Duration(config.Global.TimeOut))
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(config.Global.TimeOut))
 			defer cancel()
-			targetMetrics = append(targetMetrics,IpmiCollect(config.Targets[i])...)
+			targetMetrics = append(targetMetrics, IpmiCollect(config.Targets[i])...)
 			select {
 			case <-ctx.Done():
 				log.Error("收到超时信号,采集退出", config.Targets[i].Host)
@@ -65,11 +70,11 @@ func flush()  {
 	defer lock.Unlock()
 }
 
-func Manage ()  {
+func Manage() {
 	//Create a cron manager
 	log.Info("Create a cron manager")
 	c := cron.New(cron.WithSeconds())
-	c.AddFunc("*/"+ config.Global.Interval +" * * * * *",flush)
+	c.AddFunc("*/"+config.Global.Interval+" * * * * *", flush)
 	//Run func every min
 	c.Start()
 	select {}
@@ -77,10 +82,11 @@ func Manage ()  {
 
 func main() {
 	log.Info("Starting ipmi_exporter")
-
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
 	go Manage()
 
-	http.HandleFunc("/metrics", remoteIPMIHandler)       // Endpoint to do IPMI scrapes.
+	http.HandleFunc("/metrics", remoteIPMIHandler) // Endpoint to do IPMI scrapes.
 	log.Infof("Listening on %s", config.Global.Address)
 	log.Info(config.Global.Address)
 	err := http.ListenAndServe(config.Global.Address, nil)
