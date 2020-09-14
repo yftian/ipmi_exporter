@@ -476,16 +476,6 @@ func markCollectorUp(name string, up int, target ipmiTarget) prometheus.Metric{
 func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 	var ipmiMetrics [] prometheus.Metric
 	start := time.Now()
-	duration := time.Since(start).Seconds()
-	//log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
-	durationMetrics := prometheus.MustNewConstMetric(
-		durationDesc,
-		prometheus.GaugeValue,
-		duration,
-		target.Host,
-	)
-	ipmiMetrics = append(ipmiMetrics, durationMetrics)
-
 	for _, collector := range config.Global.Collector {
 		var up int
 		var collectMetcics []prometheus.Metric
@@ -506,6 +496,15 @@ func IpmiCollect(target ipmiTarget) []prometheus.Metric {
 		ipmiMetrics = append(ipmiMetrics, markCollectorUp(collector, up, target))
 	}
 	//log.Info("ipmiMetrics:",len(ipmiMetrics))
+	duration := time.Since(start).Seconds()
+	//log.Debugf("Scrape of target %s took %f seconds.", target.Host, duration)
+	durationMetrics := prometheus.MustNewConstMetric(
+		durationDesc,
+		prometheus.GaugeValue,
+		duration,
+		target.Host,
+	)
+	ipmiMetrics = append(ipmiMetrics, durationMetrics)
 	return ipmiMetrics
 }
 
